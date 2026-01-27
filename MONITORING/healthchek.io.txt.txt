@@ -1,0 +1,54 @@
+============================================================
+SENTRIX PROJECT: LINUX HEALTH MONITORING (PASSIVE)
+SYSTEM: HEALTHCHECKS.IO (DEAD MAN'S SWITCH)
+============================================================
+
+1. OPERATIONAL LOGIC: THE DEAD MAN'S SWITCH
+------------------------------------------------------------
+Unlike active monitoring which probes a server (often blocked 
+by OPNsense), Healthchecks.io waits for an outbound "ping" 
+from the server. If the signal stops, an alert is triggered.
+
+STATE MACHINE LOGIC:
+- UP (Green): Ping arrived on time.
+- LATE (Orange): Time passed, currently in "Grace Period".
+- DOWN (Red): Grace Period expired; Alert transmitted.
+
+2. STEP-BY-STEP IMPLEMENTATION (LINUX NODES)
+------------------------------------------------------------
+Step 1: Create a Check on Healthchecks.io
+- Name: "Sentrix_Linux_Node_Uptime"
+- Period: 5 Minutes (Frequency of check-in)
+- Grace Time: 2 Minutes (Safety buffer)
+- Copy the unique Ping URL (UUID).
+
+Step 2: Configure the Linux Heartbeat (Cron)
+- Open Crontab: crontab -e
+- Add Heartbeat Command:
+  */5 * * * * curl -fsS -m 10 --retry 5 -o /dev/null [YOUR-PING-URL]
+
+  * -fsS: Silent run, show errors.
+  * -m 10: 10-second timeout.
+  * --retry 5: Network resilience.
+
+Step 3: Verification
+- Manual Test: curl -v [YOUR-PING-URL]
+- Ensure 'curl' is installed: sudo apt install curl -y
+
+3. COMPARISON: ACTIVE VS. PASSIVE MONITORING
+------------------------------------------------------------
++----------------+----------------------+----------------------+
+| Feature        | Active (Traditional) | Passive (Sentrix/HC) |
++----------------+----------------------+----------------------+
+| Method         | Monitor pings Server | Server pings Monitor |
+| Firewall       | Requires Open Ports  | No Open Ports Needed |
+| Security       | Higher Risk          | Zero Inbound Risk    |
+| Connectivity   | NAT/VPN Issues       | Works via NAT/VPN    |
++----------------+----------------------+----------------------+
+
+4. NOTIFICATION INTEGRATIONS
+------------------------------------------------------------
+I have configured the following alert channels for Sentrix:
+- Primary: Email Alerts (Default)
+- Secondary: Discord/Telegram (Configured via Integrations tab)
+

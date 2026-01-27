@@ -1,0 +1,63 @@
+============================================================
+SENTRIX PROJECT: DEBIAN 12 (BOOKWORM) AD INTEGRATION
+METHOD: SAMBA + SSSD + REALMD
+============================================================
+
+1. PREREQUISITES
+------------------------------------------------------------
+- Static IP: Configured on the Debian Bridge adapter.
+- DNS: Primary DNS must point to the Windows DC IP.
+- Time Sync: Ensure system time matches the DC (crucial for Kerberos).
+
+2. STEP 1: INSTALL REQUIRED PACKAGES
+------------------------------------------------------------
+Run the following command to install the integration suite:
+
+sudo apt update
+sudo apt install sssd-ad sssd-tools realmd adcli samba-common-bin \
+packagekit policykit-1 -y
+
+3. STEP 2: HOSTNAME AND DNS VERIFICATION
+------------------------------------------------------------
+- Set FQDN: 
+  sudo hostnamectl set-hostname debian-srv.sentrix.local
+
+- Verify Domain Connectivity:
+  host -t SRV _ldap._tcp.sentrix.local
+
+4. STEP 3: DISCOVER AND JOIN THE DOMAIN
+------------------------------------------------------------
+- Discover the Domain:
+  realm discover sentrix.local
+
+- Join the Domain:
+  sudo realm join -U Administrator sentrix.local
+  (Enter the Domain Admin password when prompted)
+
+5. STEP 4: SSSD & PAM CONFIGURATION
+------------------------------------------------------------
+- Enable Automatic Home Directory Creation:
+  sudo pam-auth-update --enable mkhomedir
+
+- Configure User Format (Optional):
+  Edit /etc/sssd/sssd.conf and set:
+  use_fully_qualified_names = False
+  
+- Restart SSSD Service:
+  sudo systemctl restart sssd
+
+6. STEP 5: CONFIGURE SUDO ACCESS (OPTIONAL)
+------------------------------------------------------------
+To grant "Domain Admins" sudo rights:
+1. Run: sudo visudo
+2. Add the following line at the end:
+   %Domain\ Admins@sentrix.local ALL=(ALL) ALL
+
+7. VERIFICATION
+------------------------------------------------------------
+Test the connection by querying a domain user:
+id username@sentrix.local
+
+If the UID/GID from Active Directory is returned, the 
+integration is successful.
+

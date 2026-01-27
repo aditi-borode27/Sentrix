@@ -1,0 +1,40 @@
+============================================================
+SENTRIX PROJECT: OPENSENSE FIREWALL ARCHITECTURAL OVERVIEW
+============================================================
+
+1. CORE FUNCTION
+------------------------------------------------------------
+In the Sentrix environment, OPNsense acts as the Statefull 
+Packet Inspection (SPI) gateway. It manages all traffic 
+flowing between the NAT (WAN/External) and the Bridge 
+(LAN/Internal) interfaces.
+
+2. SEGMENTATION & ADAPTER LOGIC
+------------------------------------------------------------
+- WAN ZONE (NAT): Acts as the "Internet" interface. It 
+  provides the public-facing IP used to establish the 
+  OpenVPN tunnel with the remote site.
+- LAN ZONE (BRIDGE): Acts as the "Internal Office" network. 
+  It hosts sensitive services including Active Directory, 
+  ELK, and Uptime Kuma.
+- TUNNEL ZONE (OVPN): A virtual interface created to bridge 
+  Site-A and Site-B, allowing secure cross-subnet routing.
+
+3. SECURITY POSTURE
+------------------------------------------------------------
+- DEFAULT DENY: All unsolicited inbound traffic from the 
+  WAN is dropped unless explicitly permitted by a rule.
+- ENCAPSULATION: All inter-site traffic is encrypted via 
+  AES-256-GCM before leaving the physical network.
+- DNS PROTECTION: The firewall is configured to intercept 
+  standard DNS requests and force resolution through the 
+  Windows Domain Controller for AD compliance.
+
+4. KEY IMPLEMENTATION HIGHLIGHTS
+------------------------------------------------------------
+- Managed the 192.168.x.x "Private Network" conflict by 
+  disabling bogon/private block rules on the WAN.
+- Optimized routing tables to ensure the Debian 12 nodes 
+  can reach the Mumbai DC via the 'tun0' interface without 
+  hairpinning through the physical gateway.
+

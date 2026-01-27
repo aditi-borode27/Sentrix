@@ -1,0 +1,44 @@
+============================================================
+PROJECT NAME: SENTRIX
+ARCHITECTURE: DUAL-SITE VIRTUALIZED INFRASTRUCTURE
+COMPONENTS: VPN, AD, MONITORING, & CORE NETWORK SERVICES
+============================================================
+
+1. NETWORK SERVICES (DHCP & DNS)
+------------------------------------------------------------
+- DHCP Server: Managed by the Windows DC to automatically 
+  assign IP addresses to LAN (Bridge) clients.
+- DNS Name Resolution: Centralized via Active Directory DNS.
+- Logic: All nodes (Windows & Linux) use the DC as the 
+  Primary DNS to resolve 'sentrix.local' and inter-site IPs.
+
+2. VPN TUNNEL (S2S OPENVPN)
+------------------------------------------------------------
+- WAN Side: NAT Adapter (External/Tunnel Path).
+- LAN Side: Bridge Adapter (Internal Subnet).
+- Tunnel: OpenVPN Site-to-Site (AES-256-GCM encryption).
+
+3. IDENTITY MANAGEMENT
+------------------------------------------------------------
+- Domain Controller: Windows Server (AD DS).
+- Linux Integration: Joining Linux nodes via SSSD/Realmd.
+- Name Resolution: Essential for the Realm Join process.
+
+4. MONITORING STACK (ELK & UPTIME KUMA)
+------------------------------------------------------------
+- ELK Stack (Elasticsearch, Logstash, Kibana):
+  * Centralized logging for VPN tunnels and AD login events.
+  * Used for security auditing and traffic analysis.
+- Uptime Kuma:
+  * Self-hosted monitoring for service availability.
+  * Healthchecks: Monitoring the VPN tunnel, DC status, 
+    and DNS responsiveness.
+- Healthcheck Kuma: Specialized triggers to alert if 
+  site-to-site connectivity latency exceeds thresholds.
+
+5. ARCHITECTURE GOAL
+------------------------------------------------------------
+A fully monitored, cross-platform environment where Linux 
+and Windows resources communicate securely across virtual 
+sites with automated IP addressing and name resolution.
+

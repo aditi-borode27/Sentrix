@@ -1,0 +1,27 @@
+1. Network Topology Overview
+WAN Interface (NAT Adapter): Used for external connectivity and the VPN tunnel endpoint.
+
+LAN Interface (Bridge Adapter): Used for internal communication between the AD, DC, and Linux clients.
+
+Architecture: Dual-site simulation via a Site-to-Site Tunnel.
+
+2. Site-to-Site VPN Configuration (Tunnel)
+This configuration assumes a Site-to-Site IPSec tunnel between two VM gateways.
+
++-----------------------+----------------------------------------------+
+| Setting               | Value                                        |
++-----------------------+----------------------------------------------+
+| Tunnel Protocol       | Openvpn                                      |
++-----------------------+----------------------------------------------+
+| WAN IP (NAT Adapter)  | VM Gateway IP (e.g., 10.0.2.15)              |
++-----------------------+----------------------------------------------+
+| LAN IP (Bridge)       | 192.168.1.0/24                               |
++-----------------------+----------------------------------------------+
+| Encryption            | AES-256-CBC                                  |
++-----------------------+----------------------------------------------+
+| Authentication        | Pre-Shared Key (PSK)                         |
++-----------------------+----------------------------------------------+
+| Primary DNS (AD/DC)   | Static IP of Windows DC (e.g., 192.168.1.10) |
++-----------------------+----------------------------------------------+
+| Domain Name           | sentrix.local                                |
++-----------------------+----------------------------------------------+

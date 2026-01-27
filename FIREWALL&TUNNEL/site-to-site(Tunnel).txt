@@ -1,0 +1,58 @@
+============================================================
+SENTRIX PROJECT: DUAL-SITE OPNsense CONFIGURATION
+TOPOLOGY: MUMBAI SERVER <--> PUNE CLIENT (BRIDGED MODE)
+============================================================
+
+1. PRE-CONFIGURATION: WAN ACCESS
+------------------------------------------------------------
+On BOTH Laptop Firewalls (Mumbai & Pune):
+- Navigate to: Interfaces -> [WAN]
+- Setting: UNCHECK "Block private networks"
+- Setting: UNCHECK "Block bogon networks"
+- Reason: Allows the VPN to form over private 192.168.x.x 
+  physical network IPs.
+
+2. MUMBAI CONFIGURATION (THE SERVER)
+------------------------------------------------------------
+Location: VPN -> OpenVPN -> Servers -> Add
+- Mode: Peer to Peer (Shared Key)
+- Protocol/Interface: UDP / WAN
+- Local Port: 1194
+- Cryptographic: Paste Shared Key (AES-256-GCM)
+- IPv4 Tunnel Network: 10.8.0.0/30
+- IPv4 Local Network: 172.20.10.0/28
+- IPv4 Remote Network: 10.119.47.0/24
+
+3. PUNE CONFIGURATION (THE CLIENT)
+------------------------------------------------------------
+Location: VPN -> OpenVPN -> Clients -> Add
+- Mode: Peer to Peer (Shared Key)
+- Protocol/Interface: UDP / WAN
+- Remote Host: [Mumbai's Physical WAN IP]
+- Remote Port: 1194
+- Cryptographic: Paste EXACT SAME Shared Key
+- IPv4 Tunnel Network: 10.8.0.0/30
+- IPv4 Local Network: 10.119.47.0/24
+- IPv4 Remote Network: 172.20.10.0/28
+
+4. MANDATORY FIREWALL RULES (BOTH SIDES)
+------------------------------------------------------------
+A. WAN RULE (Establishing Tunnel):
+   - Action: Pass | Protocol: UDP | Port: 1194
+   - Destination: WAN Address
+
+B. OPENVPN INTERFACE RULE (Traffic Flow):
+   - Action: Pass | Protocol: ANY | Source: ANY
+   - Destination: ANY
+   - Reason: Permits cross-site communication between 
+     the 172.20.10.x and 10.119.47.x subnets.
+
+5. VERIFICATION & TESTING
+------------------------------------------------------------
+1. CONNECTION STATUS: Check VPN -> OpenVPN -> Connection 
+   Status (Status must be 'UP/Green').
+2. CROSS-SITE PING: 
+   From Pune Linux VM (10.119.47.x) --> Mumbai DC (172.20.10.x).
+3. ROUTING CHECK: Ensure traffic flows via 10.8.0.x 
+   gateway using 'traceroute' or 'tracert'.
+
