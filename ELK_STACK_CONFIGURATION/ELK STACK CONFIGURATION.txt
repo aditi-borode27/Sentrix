@@ -1,0 +1,107 @@
+ELK STACK CONFIGURATION DOCUMENT
+================================
+
+Operating System:
+Debian Linux
+
+--------------------------------
+1. Elasticsearch Configuration
+--------------------------------
+Service: elasticsearch
+Port: 9200
+
+File: /etc/elasticsearch/elasticsearch.yml
+
+Configurations:
+- network.host: 0.0.0.0
+- http.port: 9200
+- discovery.type: single-node
+
+Service Commands:
+sudo systemctl start elasticsearch
+sudo systemctl enable elasticsearch
+
+--------------------------------
+2. Logstash Configuration
+--------------------------------
+Service: logstash
+Port: 5044
+
+Input:
+- Beats input for Winlogbeat
+
+File: /etc/logstash/conf.d/winlogbeat.conf
+
+Sample Pipeline:
+input {
+  beats {
+    port => 5044
+  }
+}
+
+filter {
+  # No custom filters applied
+}
+
+output {
+  elasticsearch {
+    hosts => ["http://localhost:9200"]
+    index => "winlogbeat-%{+YYYY.MM.dd}"
+  }
+}
+
+Service Commands:
+sudo systemctl start logstash
+sudo systemctl enable logstash
+
+--------------------------------
+3. Kibana Configuration
+--------------------------------
+Service: kibana
+Port: 5601
+
+File: /etc/kibana/kibana.yml
+
+Configurations:
+- server.port: 5601
+- server.host: "0.0.0.0"
+- elasticsearch.hosts: ["http://localhost:9200"]
+
+Service Commands:
+sudo systemctl start kibana
+sudo systemctl enable kibana
+
+--------------------------------
+4. Windows Log Collection
+--------------------------------
+Tool Used: Winlogbeat
+
+Installed On:
+- Primary Domain Controller (DC)
+- Additional Domain Controller (ADC)
+
+Configuration File:
+winlogbeat.yml
+
+Logs Collected:
+- Security
+- System
+- Application
+
+Output:
+Logstash IP: <ELK_SERVER_IP>
+Port: 5044
+
+--------------------------------
+5. Firewall Ports Allowed
+--------------------------------
+- 5044 (Winlogbeat to Logstash)
+- 9200 (Elasticsearch)
+- 5601 (Kibana)
+
+--------------------------------
+6. Result
+--------------------------------
+- Centralized log monitoring
+- Real-time visibility of Windows and Linux logs
+- Improved security monitoring
