@@ -1,0 +1,68 @@
+DNS CONFIGURATION – SENTRIX PROJECT
+==================================
+
+Project Name:
+Secure Hybrid Infrastructure with Centralized Monitoring and Logging
+
+DNS Server:
+Windows Server running Active Directory Domain Services (ADC)
+
+Role of DNS in Project:
+The DNS server provides internal name resolution for all servers and services
+within the Sentrix infrastructure. This allows ELK stack servers, Jenkins,
+web server, and monitoring tools to communicate using hostnames instead of IPs.
+
+--------------------------------------------------
+1. DNS SERVER DETAILS
+--------------------------------------------------
+
+Server Hostname: adc.sentrix.lab
+IP Address: 192.168.10.103
+Domain Name: sentrix.lab
+Server Role: Primary Domain Controller (ADC) + DNS
+
+--------------------------------------------------
+2. DNS CONFIGURATION STEPS
+--------------------------------------------------
+
+1. Installed DNS Role along with Active Directory Domain Services.
+2. Created Forward Lookup Zone: sentrix.lab
+3. Created Reverse Lookup Zone: 10.168.192.in-addr.arpa
+4. Added A (Host) records for all important servers:
+   - adc           -> 192.168.10.103
+   - dc2 (RODC)    -> 192.168.18.103
+   - elk           -> 192.168.10.135
+   - elasticsearch -> 192.168.10.135
+   - logstash      -> 192.168.10.135
+   - kibana        -> 192.168.10.135
+   - web           -> 192.168.10.40
+   - monitoring    -> 192.168.10.21 (Debian)
+5. Added PTR records in reverse zone to ensure reverse DNS resolution.
+
+--------------------------------------------------
+3. DNS TESTING
+--------------------------------------------------
+
+1. From any client machine or server in the domain:
+   - Ping hostname: ping elk.sentrix.lab
+   - Resolve hostname: nslookup kibana.sentrix.lab
+   - Verify reverse lookup: nslookup 192.168.10.135
+
+2. Ensure all machines can resolve:
+   - ADC and RODC
+   - ELK Stack servers
+   - Web server
+   - Monitoring servers
+
+--------------------------------------------------
+4. SECURITY & BEST PRACTICES
+--------------------------------------------------
+
+• Only internal machines use this DNS for resolution.
+• External DNS queries are forwarded via secure external forwarders if needed.
+• Integrated with Active Directory to enforce centralized authentication.
+• Supports hostname-based communication for ELK stack, Jenkins, and other services.
+
+--------------------------------------------------
+END OF DNS CONFIGURATION
+--------------------------------------------------
