@@ -1,0 +1,107 @@
+Technical Project Manual: Automated CI/CD Web Infrastructure
+1. Executive Summary
+This  automates the deployment of a two-tier Nginx architecture using Jenkins and Docker Swarm. The system is designed for Infrastructure as Code (IaC), meaning every configuration, from the network to the web content, is stored in code and deployed automatically upon every GitHub push.
+
+Phase 1: Security & Authentication (The "Handshake")
+Before Jenkins can talk to GitHub, they need a "secret handshake." We use SSH Keys for this.
+1. Generate the Keys (On your Debian machine)
+Run this command to create a pair of keys:
+Bash
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+•	What this creates: * id_rsa (Private Key): 
+o	id_rsa.pub (Public Key): This goes to GitHub.
+
+
+2. Connect to GitHub
+•	Step: Copy the content of id_rsa.pub.
+•	Action: Go to your GitHub Repo → Settings → Deploy Keys → Add Deploy Key. Paste it there.
+•	Result: GitHub now recognizes Debian server as a "trusted friend."
+3. Connect to Jenkins
+•	Step: Copy the content of the private key (id_rsa).
+•	Action: Go to Jenkins → Manage Jenkins → Credentials → System → Global credentials → Add Credentials.
+•	Type: Select "SSH Username with private key."
+•	ID: Give it a name like github-ssh-key. This ID is what  use in your Jenkinsfile.
+________________________________________
+
+Phase 2: Creating the Infrastructure Files
+
+We created 4 specific files. Here is why and how they work.
+
+1. nginx.conf (The Router)
+This file is the "brain" of your proxy. It tells Nginx where to send traffic.
+Nginx
+events {}
+http {
+    server {
+        listen 80;
+        location / {
+            proxy_pass http://web-app:80; # Sends traffic to the 'web-app' container
+        }
+    }
+}
+
+
+2. Dockerfile (The Proxy Builder)
+This takes the standard Nginx and swaps the default config for your nginx.conf.
+
+Dockerfile
+FROM nginx:alpine
+COPY nginx.conf /etc/nginx/nginx.conf
+3. Dockerfile.web (The Content Builder)
+This is where  index.html lives.
+
+
+Dockerfile
+
+FROM nginx:alpine
+COPY  .     /usr/share/nginx/html  
+4. docker-compose.yml (The Blueprint)
+This defines how the containers live together in the Docker Swarm.
+YAML
+version: '3.8'
+services:
+  web-app:
+    image: my-site-content:latest  # The image Jenkins builds
+    networks:
+      - site-net
+  proxy:
+    image: custom-nginx:latest     # The image Jenkins builds
+    ports:
+      - "8081:80"                  # Maps server's 8081 to the proxy
+    networks:
+      - site-net
+networks:
+  site-net:
+    driver: overlay                # Allows containers to talk across the Swarm
+
+
+
+Phase 3: The Automation (The Pipeline)
+We created a Jenkins Pipeline job. The "brain" of this job is the Jenkinsfile.
+
+pipeline {
+    agent any
+    stages {
+        stage('Pull from Sentrix') {
+            steps {
+         
+                git branch: 'main', credentialsId: 'github-ssh-key', url: 'git@github.com:your-user/sentrix.git'
+            }
+        }
+        stage('Build Web Image') {
+            steps {
+                // This specifically uses Dockerfile.web to package the Sentrix content
+                sh 'docker build -t my-site-content:latest -f Dockerfile.web .'
+                sh 'docker build -t custom-nginx:latest -f Dockerfile .'
+            }
+        }
+        stage('Deploy to Swarm') {
+            steps {
+                sh 'docker stack deploy -c docker-compose.yml sentrix-stack'
+                // Forces the update so group changes appear immediately
+                sh 'docker service update --force sentrix-stack_web-app'
+            }
+        }
+    }
+}
+
